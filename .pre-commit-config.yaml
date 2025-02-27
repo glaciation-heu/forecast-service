@@ -65,13 +65,3 @@ repos:
         types: [python]
         pass_filenames: false
         always_run: true
-
-  - repo: local
-    hooks:
-      - id: generate_client
-        name: generate client
-        entry: poetry --directory server run python ./tools/client_generator/generate.py --file ./api/openapi.yaml
-        language: system
-        types: [python]
-        pass_filenames: false
-        always_run: true
