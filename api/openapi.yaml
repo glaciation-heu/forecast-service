@@ -23,16 +23,14 @@ paths:
               schema: {}
   /:
     get:
-      summary: Example endpoint
-      description: Example endpoint that returns test data
-      operationId: example__get
+      summary: Read Root
+      operationId: read_root__get
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/ExampleResponse'
+              schema: {}
   /item/:
     get:
       tags:
@@ -156,6 +154,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /predict:
+    get:
+      summary: Predict using LSTM-BNN
+      operationId: predict_predict_get
+      responses:
+        '200':
+          description: Prediction result
+          content:
+            application/json:
+              schema: {}
 components:
   schemas:
     ExampleResponse:
