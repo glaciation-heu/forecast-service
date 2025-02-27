@@ -31,7 +31,7 @@ The release version for branches, pull requests, and tags will be generated base
 GitHub Actions triggers testing, builds, and application publishing for each release.  
 https://docs.github.com/en/actions  
 
-You can set up automatic testing in GitHub Actions for different versions of Python. To do this, you need to specify the set of versions in the `.github/workflows/client.yaml` or `.github/workflows/server.yaml file`. For example:
+You can set up automatic testing in GitHub Actions for different versions of Python. To do this, you need to specify the set of versions in the `.github/workflows/server.yaml file`. For example:
 ```yaml
 strategy:
   matrix:
@@ -46,8 +46,3 @@ During the build and publish process, a Docker image is built, a Helm chart is c
 - `DOCKER_IMAGE_NAME` - The name of the Docker image for uploading to the repository.
 
 You can run your GitHub Actions locally using https://github.com/nektos/act. 
-
-Usage example:
-```bash
-act push -j test_and_build_client --secret-file my.secrets
-```

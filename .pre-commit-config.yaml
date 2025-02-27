@@ -8,9 +8,9 @@ repos:
     rev: v3.4.0
     hooks:
       - id: trailing-whitespace
-        exclude: client/.*|.*\.md
+        exclude: .*\.md
       - id: end-of-file-fixer
-        exclude: client/.*|.*\.md
+        exclude: .*\.md
       - id: check-yaml
         exclude: charts/
       - id: check-added-large-files
