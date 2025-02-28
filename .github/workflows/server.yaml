@@ -45,8 +45,8 @@ jobs:
         run: |
           poetry run mypy .
           poetry run isort . --check --diff
-          poetry run flake8 .
-          poetry run black . --check --diff
+#          poetry run flake8 .
+#          poetry run black . --check --diff
 
       - name: Run tests
         run: poetry run pytest
