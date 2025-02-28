@@ -34,14 +34,14 @@ def get_input_features():
     # Parse the JSON response
     try:
         # json_response = json.loads(result)
-        keys_to_features = {
+        keys_to_features: dict[str, str] = {
             "cpu": "CPU_Usage(%)",
             "memory": "Memory_Usage(MB)",
             "storage": "Disk_Usage(MB)",
             "network": "Network_Recv(KB)",
             "energy": "Power_Consumption(uJ)",
         }
-        features_inputs = {
+        features_inputs: dict[str, list[float]] = {
             "CPU_Usage(%)": [],
             "Memory_Usage(MB)": [],
             "Disk_Usage(MB)": [],

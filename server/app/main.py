@@ -78,7 +78,7 @@ class_exempt_features = [
 
 class InputData(BaseModel):
     input_feature: str  # Example "nproc"
-    input: list  # Example: [20.0, 40.0, 60.0]
+    input: list[Any]  # Example: [20.0, 40.0, 60.0]
 
 
 @app.get("/")
@@ -117,7 +117,7 @@ def predict():  # data: InputData):
             # input_data = data.input
             print("input_data=", input_data)
 
-            results = {"Timestamp": [], "predictions": [], "uncertainties": []}
+            results: dict[str, list[float]] = {"Timestamp": [], "predictions": [], "uncertainties": []}
 
             timestamp = datetime.now()
 
