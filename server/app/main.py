@@ -117,7 +117,7 @@ def predict():  # data: InputData):
             # input_data = data.input
             print("input_data=", input_data)
 
-            results: dict[str, list[float]] = {"Timestamp": [], "predictions": [], "uncertainties": []}
+            results: dict[str, list[Any]] = {"Timestamp": [], "predictions": [], "uncertainties": []}
 
             timestamp = datetime.now()
 
