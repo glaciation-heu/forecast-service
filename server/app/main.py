@@ -3,12 +3,17 @@ from typing import Any, Dict
 import pickle
 from datetime import datetime, timedelta
 
+import base64
+import io
+import matplotlib.pyplot as plt
+import shap
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
 from fastapi import FastAPI, HTTPException
 from fastapi.openapi.utils import get_openapi
+
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
@@ -76,6 +81,41 @@ class_exempt_features = [
 # fastapp = FastAPI(title='Nproc LSTM-BNN timeseries prediction API', description='LSTM-BNN Nprocs prediction model using OpenAPI', version='1.0')
 
 
+def generate_shapley_plots(model, x_inputs, n_steps):
+    x_inputs = np.array(x_inputs)
+    x_inputs = x_inputs.reshape(-1, n_steps)
+    # print('x inputs shape = ', x_inputs.shape)
+    # print('x_inputs = ',x_inputs)
+    # print('model output=',model(torch.tensor(x_inputs, dtype=torch.float32)))
+
+    model.eval()
+    with torch.no_grad():
+        explainer = shap.KernelExplainer(
+            lambda x: model(
+                torch.tensor(x.reshape(-1, n_steps, 1), dtype=torch.float32)
+            )[0]
+            .detach()
+            .numpy(),
+            x_inputs,
+        )
+    # x_inputs = x_inputs.reshape(-1, n_steps)
+    shap_values = explainer.shap_values(x_inputs)
+    shap_values = shap_values.reshape(-1, n_steps)
+    plt.figure()
+
+    shap.summary_plot(shap_values, x_inputs, plot_type="bar", show=False)
+
+    # Save the current figure to a BytesIO buffer
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png", bbox_inches="tight")
+    plt.close()  # Close the figure to free memory
+    buf.seek(0)
+    # Encode the image data in Base64
+    encoded = base64.b64encode(buf.read()).decode("utf-8")
+
+    return f"data:image/png;base64,{encoded}"
+
+
 class InputData(BaseModel):
     input_feature: str  # Example "nproc"
     input: list[Any]  # Example: [20.0, 40.0, 60.0]
@@ -97,7 +137,6 @@ def predict():  # data: InputData):
         main_results = {}
         for name_of_feature, input_data in features_inputs.items():
             # name_of_feature = data.input_feature
-
             # Load model
             model_path = name_of_feature + "_model_state_dict.pth"
             output_size = (
@@ -117,14 +156,15 @@ def predict():  # data: InputData):
             # input_data = data.input
             print("input_data=", input_data)
 
-            results: dict[str, list[Any]] = {
+            results: dict[str, Any] = {
                 "Timestamp": [],
                 "predictions": [],
                 "uncertainties": [],
+                "Explanation_plot": Any,
             }
 
             timestamp = datetime.now()
-
+            list_of_input_data = []
             for i in range(10):
                 if name_of_feature not in class_exempt_features:
                     # Load LabelEncoder
@@ -154,6 +194,7 @@ def predict():  # data: InputData):
                     input_tensor = torch.tensor(input_data_scaled, dtype=torch.float32)
                     print("input_tensor=", input_tensor)
 
+                list_of_input_data.append(input_tensor.numpy())
                 with torch.no_grad():
                     # print('model output = ',model(input_tensor))
                     output, uncertainty = model(input_tensor)
@@ -207,6 +248,10 @@ def predict():  # data: InputData):
                 input_data = np.roll(input_data, -1)
                 input_data[-1] = prediction
 
+            graph_plot = generate_shapley_plots(
+                model, list_of_input_data, len(input_data)
+            )
+            results["Explanation_plot"] = graph_plot
             print(pd.DataFrame(results))
 
             main_results[name_of_feature] = results
