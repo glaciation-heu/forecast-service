@@ -1,19 +1,18 @@
 from typing import Any, Dict
 
+import base64
+import io
 import pickle
 from datetime import datetime, timedelta
 
-import base64
-import io
 import matplotlib.pyplot as plt
-import shap
 import numpy as np
 import pandas as pd
+import shap
 import torch
 import torch.nn.functional as F
 from fastapi import FastAPI, HTTPException
 from fastapi.openapi.utils import get_openapi
-
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
