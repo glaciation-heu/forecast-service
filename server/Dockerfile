@@ -7,7 +7,7 @@ COPY poetry.lock pyproject.toml ./
 RUN pip install --no-cache-dir poetry \
     && poetry config virtualenvs.create false \
     && poetry install --no-root --without dev,test \
-    && rm -rf $(poetry config cache-dir)/{cache,artifacts}
+    && rm -rf /root/.cache/pypoetry/{cache,artifacts}
 
 COPY ./app /code/app
 

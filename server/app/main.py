@@ -16,8 +16,8 @@ from fastapi.openapi.utils import get_openapi
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
-from curl_test import get_input_features
-from models import LSTM_BNN
+from app.curl_test import get_input_features
+from app.models import LSTM_BNN
 
 from . import example, items
 
@@ -78,9 +78,9 @@ class_exempt_features = [
 ]
 
 # fastapp = FastAPI(title='Nproc LSTM-BNN timeseries prediction API', description='LSTM-BNN Nprocs prediction model using OpenAPI', version='1.0')
+root_path = 'app/'
 
-
-def generate_shapley_plots(model, x_inputs, n_steps):
+def generate_shapley_plots(model, x_inputs, n_steps, name_feature):
     x_inputs = np.array(x_inputs)
     x_inputs = x_inputs.reshape(-1, n_steps)
     # print('x inputs shape = ', x_inputs.shape)
@@ -100,14 +100,16 @@ def generate_shapley_plots(model, x_inputs, n_steps):
     # x_inputs = x_inputs.reshape(-1, n_steps)
     shap_values = explainer.shap_values(x_inputs)
     shap_values = shap_values.reshape(-1, n_steps)
-    plt.figure()
+    fig, ax = plt.subplots(figsize=(8, 6))
 
     shap.summary_plot(shap_values, x_inputs, plot_type="bar", show=False)
+
+    ax.set_title(name_feature+" Input Features Contribution", fontsize=14)
 
     # Save the current figure to a BytesIO buffer
     buf = io.BytesIO()
     plt.savefig(buf, format="png", bbox_inches="tight")
-    plt.close()  # Close the figure to free memory
+    plt.close(fig)  # Close the figure to free memory
     buf.seek(0)
     # Encode the image data in Base64
     encoded = base64.b64encode(buf.read()).decode("utf-8")
@@ -137,7 +139,7 @@ def predict():  # data: InputData):
         for name_of_feature, input_data in features_inputs.items():
             # name_of_feature = data.input_feature
             # Load model
-            model_path = name_of_feature + "_model_state_dict.pth"
+            model_path = root_path + name_of_feature + "_model_state_dict.pth"
             output_size = (
                 1
                 if name_of_feature in class_exempt_features
@@ -167,7 +169,7 @@ def predict():  # data: InputData):
             for i in range(10):
                 if name_of_feature not in class_exempt_features:
                     # Load LabelEncoder
-                    with open("label_encoder_" + name_of_feature + ".pkl", "rb") as f:
+                    with open(root_path + "label_encoder_" + name_of_feature + ".pkl", "rb") as f:
                         label_encoder = pickle.load(
                             f
                         )  # Ensure consistency with training
@@ -185,7 +187,7 @@ def predict():  # data: InputData):
                 else:  # if a feature is regression feature...
                     input_data = np.array(input_data)
                     # Load Scaler for normalization
-                    with open("scaler_" + name_of_feature + ".pkl", "rb") as f:
+                    with open(root_path + "scaler_" + name_of_feature + ".pkl", "rb") as f:
                         scaler = pickle.load(f)  # Ensure consistency with training
                         input_data_scaled = scaler.transform(input_data.reshape(-1, 1))
 
@@ -248,7 +250,8 @@ def predict():  # data: InputData):
                 input_data[-1] = prediction
 
             graph_plot = generate_shapley_plots(
-                model, list_of_input_data, len(input_data)
+                model, list_of_input_data, len(input_data),
+                name_of_feature
             )
             results["Explanation_plot"] = graph_plot
             print(pd.DataFrame(results))
