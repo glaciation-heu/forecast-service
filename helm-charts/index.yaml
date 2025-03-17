@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   server:
   - apiVersion: v2
+    appVersion: 0.2.2
+    created: "2025-03-17T19:07:52.219524111Z"
+    description: Web server
+    digest: a1df1787d1ba0d4ff102502b7eac0d3891c951f86510816a0c5ed845d9c6d2a7
+    name: server
+    type: application
+    urls:
+    - https://glaciation-heu.github.io/forecast-service/helm-charts/server-0.2.2.tgz
+    version: 0.2.2
+  - apiVersion: v2
     appVersion: 0.2.1
     created: "2025-03-15T01:22:50.894198909Z"
     description: Web server
@@ -101,4 +111,4 @@ entries:
     urls:
     - https://glaciation-heu.github.io/forecast-service/helm-charts/server-0.1.0-dev.9.main.deeb40a5.tgz
     version: 0.1.0-dev.9.main.deeb40a5
-generated: "2025-03-15T01:22:50.89367919Z"
+generated: "2025-03-17T19:07:52.218865702Z"
