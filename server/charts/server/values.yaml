@@ -13,7 +13,7 @@ serviceAccount:
   create: true
   automount: true
   annotations: {}
-  name: ""
+  name: "forecast-service"
 
 podAnnotations: {}
 podLabels: {}
@@ -36,3 +36,5 @@ readinessProbe:
   httpGet:
     path: /
     port: http
+
+ingressHostName: forecast-service
