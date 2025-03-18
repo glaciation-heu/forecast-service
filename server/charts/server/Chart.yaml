@@ -1,5 +1,5 @@
 apiVersion: v2
-name: server
+name: forecast-service
 description: Glaciation forecast service
 type: application
 version: ""
