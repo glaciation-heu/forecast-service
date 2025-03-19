@@ -13,14 +13,18 @@ def get_input_features():
     print(formatted_start_time)
     print(formatted_end_time)
     # Define the request url
-    url_req = "http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="\
-        +formatted_start_time+"&endTime="+formatted_end_time
+    url_req = (
+        "http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="
+        + formatted_start_time
+        + "&endTime="
+        + formatted_end_time
+    )
     print("requested url: ", url_req)
     # Invoke request and parse json response
     try:
         response = requests.get(url_req)
         if response.status_code == 200:
-            print('response OK')
+            print("response OK")
             json_response = response.json()
 
         keys_to_features: dict[str, str] = {
@@ -39,7 +43,7 @@ def get_input_features():
         }
         # with open("response.json", "r") as file:
         #   json_response = json.load(file)
-        #json_response = json.loads(result)
+        # json_response = json.loads(result)
         print("json response = ", json_response, "\n\n\n")
         print("last ten =", json_response["workloads"][-10:], "\n\n\n")
         las_ten = json_response["workloads"][-10:]
@@ -66,7 +70,7 @@ def get_input_features():
         return features_inputs
 
     except requests.exceptions.RequestException as e:
-        print('Request failed: ', e)
+        print("Request failed: ", e)
         return e
 
 
