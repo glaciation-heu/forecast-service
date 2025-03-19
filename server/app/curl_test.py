@@ -1,5 +1,4 @@
-import json
-import subprocess
+import requests
 from datetime import datetime, timedelta
 
 
@@ -13,27 +12,17 @@ def get_input_features():
     formatted_end_time = end_time.strftime("%Y-%m-%dT%H%%3A%MZ")
     print(formatted_start_time)
     print(formatted_end_time)
-    # Define the curl command
-    curl_command = [
-        "curl",
-        "-s",
-        "-X",
-        "GET",
-        "http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="
-        + formatted_start_time
-        + "&endTime="
-        + formatted_end_time,
-        "-H",
-        "Accept: application/json",
-    ]
-    print("curl command=", curl_command)
-    # Execute the command and capture the output
-    result = subprocess.check_output(curl_command)  # , capture_output=True, text=True)
-    print("result =", result, "\n\n\n")
-
-    # Parse the JSON response
+    # Define the request url
+    url_req = "http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="\
+        +formatted_start_time+"&endTime="+formatted_end_time
+    print("requested url: ", url_req)
+    # Invoke request and parse json response
     try:
-        # json_response = json.loads(result)
+        response = requests.get(url_req)
+        if response.status_code == 200:
+            print('response OK')
+            json_response = response.json()
+
         keys_to_features: dict[str, str] = {
             "cpu": "CPU_Usage(%)",
             "memory": "Memory_Usage(MB)",
@@ -50,7 +39,7 @@ def get_input_features():
         }
         # with open("response.json", "r") as file:
         #   json_response = json.load(file)
-        json_response = json.loads(result)
+        #json_response = json.loads(result)
         print("json response = ", json_response, "\n\n\n")
         print("last ten =", json_response["workloads"][-10:], "\n\n\n")
         las_ten = json_response["workloads"][-10:]
@@ -76,9 +65,9 @@ def get_input_features():
 
         return features_inputs
 
-    except json.JSONDecodeError:
-        print("Failed to parse JSON")
-        return "Failed to parse JSON"
+    except requests.exceptions.RequestException as e:
+        print('Request failed: ', e)
+        return e
 
 
 # inputs = get_input_features()
