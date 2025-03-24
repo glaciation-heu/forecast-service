@@ -20,7 +20,6 @@ from app.curl_test import get_input_features
 from app.models import LSTM_BNN
 
 
-
 class CustomFastAPI(FastAPI):
     def openapi(self) -> Dict[str, Any]:
         if self.openapi_schema:
