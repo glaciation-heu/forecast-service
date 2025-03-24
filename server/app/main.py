@@ -19,7 +19,6 @@ from pydantic import BaseModel
 from app.curl_test import get_input_features
 from app.models import LSTM_BNN
 
-from . import example, items
 
 
 class CustomFastAPI(FastAPI):
@@ -49,10 +48,6 @@ app = CustomFastAPI()
 
 
 Instrumentator().instrument(app).expose(app)
-
-
-app.include_router(example.router)
-app.include_router(items.routes.router)
 
 
 output_sizes_of_features = {
