@@ -48,7 +48,7 @@ jobs:
 #          poetry run flake8 .
 #          poetry run black . --check --diff
 
-      - name: Run tests
+#      - name: Run tests
 #        run: poetry run pytest
 
       - name: Verify OpenAPI spec has been updated
