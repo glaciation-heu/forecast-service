@@ -1,5 +1,8 @@
 apiVersion: v1
 kind: Pod
+metadata:
+  name: ucc-gpu-pod
+  namespace: ucc
 spec:
   restartPolicy: Never
   containers:
