@@ -1,8 +1,8 @@
 import time
 from datetime import datetime, timedelta
 
-import requests
 import pytz
+import requests
 
 
 def get_input_features():

@@ -3,8 +3,8 @@ from typing import Any, Dict
 import base64
 import io
 import pickle
-from datetime import datetime, timedelta
 import time
+from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -134,7 +134,7 @@ def predict(data: InputData):
         start_time = time.time()
         features_inputs = get_input_features()
         print(features_inputs)
-        main_results = {}
+        main_results: dict[str, Any] = {}
         if not features_inputs:
             return main_results
         xai = data.xai_graph
