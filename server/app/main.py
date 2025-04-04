@@ -129,7 +129,7 @@ def read_root():
     summary="Predict using LSTM-BNN",
     response_description="Prediction result",
 )
-def predict(data: InputData):
+def predict(data: InputData) -> Dict[str, Any]:
     try:
         start_time = time.time()
         features_inputs = get_input_features()

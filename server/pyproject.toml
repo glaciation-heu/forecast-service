@@ -28,6 +28,7 @@ matplotlib = "^3.10.1"
 shap = "^0.46.0"
 requests = "^2.32.3"
 types-requests = "^2.32.0.20250306"
+pytz = "^2025.1"
 
 
 [tool.poetry.group.dev.dependencies]
