@@ -16,18 +16,18 @@ def get_input_features():
     print(end_time)
 
     formatted_start_time = start_time.astimezone(pytz.utc)
-    formatted_start_time = formatted_start_time.strftime("%Y-%m-%dT%H%%3A%MZ")
+    formatted_start_time_str = formatted_start_time.strftime("%Y-%m-%dT%H%%3A%MZ")
     formatted_end_time = end_time.astimezone(pytz.utc)
-    formatted_end_time = formatted_end_time.strftime("%Y-%m-%dT%H%%3A%MZ")
+    formatted_end_time_str = formatted_end_time.strftime("%Y-%m-%dT%H%%3A%MZ")
 
     print(formatted_start_time)
     print(formatted_end_time)
     # Define the request url
     url_req = (
         "http://trade-off-service/api/v1/clusters/hh/workloads?startTime="
-        + formatted_start_time
+        + formatted_start_time_str
         + "&endTime="
-        + formatted_end_time
+        + formatted_end_time_str
     )
     print("requested url: ", url_req)
     # Invoke request and parse json response
