@@ -24,7 +24,7 @@ def get_input_features():
     print(formatted_end_time)
     # Define the request url
     url_req = (
-        "http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="
+        "http://trade-off-service/api/v1/clusters/hh/workloads?startTime="
         + formatted_start_time
         + "&endTime="
         + formatted_end_time
