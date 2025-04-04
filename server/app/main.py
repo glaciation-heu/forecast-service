@@ -4,6 +4,7 @@ import base64
 import io
 import pickle
 from datetime import datetime, timedelta
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -78,7 +79,8 @@ class_exempt_features = [
 ]
 
 # fastapp = FastAPI(title='Nproc LSTM-BNN timeseries prediction API', description='LSTM-BNN Nprocs prediction model using OpenAPI', version='1.0')
-root_path = 'app/'
+root_path = "app/"
+
 
 def generate_shapley_plots(model, x_inputs, n_steps, name_feature):
     x_inputs = np.array(x_inputs)
@@ -104,7 +106,7 @@ def generate_shapley_plots(model, x_inputs, n_steps, name_feature):
 
     shap.summary_plot(shap_values, x_inputs, plot_type="bar", show=False)
 
-    ax.set_title(name_feature+" Input Features Contribution", fontsize=14)
+    ax.set_title(name_feature + " Input Features Contribution", fontsize=14)
 
     # Save the current figure to a BytesIO buffer
     buf = io.BytesIO()
@@ -118,8 +120,9 @@ def generate_shapley_plots(model, x_inputs, n_steps, name_feature):
 
 
 class InputData(BaseModel):
-    input_feature: str  # Example "nproc"
-    input: list[Any]  # Example: [20.0, 40.0, 60.0]
+    xai_graph: bool
+    # input_feature: str  # Example "nproc"
+    # input: list[Any]  # Example: [20.0, 40.0, 60.0]
 
 
 @app.get("/")
@@ -127,15 +130,20 @@ def read_root():
     return {"message": "Welcome to the LSTM-BNN Model API"}
 
 
-@app.get(
+@app.post(
     "/predict",
     summary="Predict using LSTM-BNN",
     response_description="Prediction result",
 )
-def predict():  # data: InputData):
+def predict(data: InputData):
     try:
+        start_time = time.time()
         features_inputs = get_input_features()
+        print(features_inputs)
         main_results = {}
+        if not features_inputs:
+            return main_results
+        xai = data.xai_graph
         for name_of_feature, input_data in features_inputs.items():
             # name_of_feature = data.input_feature
             # Load model
@@ -169,7 +177,9 @@ def predict():  # data: InputData):
             for i in range(10):
                 if name_of_feature not in class_exempt_features:
                     # Load LabelEncoder
-                    with open(root_path + "label_encoder_" + name_of_feature + ".pkl", "rb") as f:
+                    with open(
+                        root_path + "label_encoder_" + name_of_feature + ".pkl", "rb"
+                    ) as f:
                         label_encoder = pickle.load(
                             f
                         )  # Ensure consistency with training
@@ -187,7 +197,9 @@ def predict():  # data: InputData):
                 else:  # if a feature is regression feature...
                     input_data = np.array(input_data)
                     # Load Scaler for normalization
-                    with open(root_path + "scaler_" + name_of_feature + ".pkl", "rb") as f:
+                    with open(
+                        root_path + "scaler_" + name_of_feature + ".pkl", "rb"
+                    ) as f:
                         scaler = pickle.load(f)  # Ensure consistency with training
                         input_data_scaled = scaler.transform(input_data.reshape(-1, 1))
 
@@ -249,14 +261,20 @@ def predict():  # data: InputData):
                 input_data = np.roll(input_data, -1)
                 input_data[-1] = prediction
 
-            graph_plot = generate_shapley_plots(
-                model, list_of_input_data, len(input_data),
-                name_of_feature
+            results["Explanation_plot"] = (
+                generate_shapley_plots(
+                    model, list_of_input_data, len(input_data), name_of_feature
+                )
+                if xai is True
+                else None
             )
-            results["Explanation_plot"] = graph_plot
+
             print(pd.DataFrame(results))
 
             main_results[name_of_feature] = results
+
+        end_time = time.time()
+        print("execution time = ", end_time - start_time, " seconds")
 
         return main_results
 

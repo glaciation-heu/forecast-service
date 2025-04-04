@@ -1,16 +1,25 @@
+import time
 from datetime import datetime, timedelta
 
 import requests
+import pytz
 
 
 def get_input_features():
+
     current_time = datetime.now()
+
     start_time = current_time - timedelta(minutes=20)
     end_time = current_time - timedelta(minutes=10)
+
     print(start_time)
     print(end_time)
-    formatted_start_time = start_time.strftime("%Y-%m-%dT%H%%3A%MZ")
-    formatted_end_time = end_time.strftime("%Y-%m-%dT%H%%3A%MZ")
+
+    formatted_start_time = start_time.astimezone(pytz.utc)
+    formatted_start_time = formatted_start_time.strftime("%Y-%m-%dT%H%%3A%MZ")
+    formatted_end_time = end_time.astimezone(pytz.utc)
+    formatted_end_time = formatted_end_time.strftime("%Y-%m-%dT%H%%3A%MZ")
+
     print(formatted_start_time)
     print(formatted_end_time)
     # Define the request url
@@ -23,7 +32,10 @@ def get_input_features():
     print("requested url: ", url_req)
     # Invoke request and parse json response
     try:
+        start_req_time = time.time()
         response = requests.get(url_req)
+        end_req_time = time.time()
+        print("URL request time = ", end_req_time - start_req_time, " seconds")
         if response.status_code == 200:
             print("response OK")
             json_response = response.json()
@@ -42,12 +54,14 @@ def get_input_features():
             "Network_Recv(KB)": [],
             "Power_Consumption(uJ)": [],
         }
-        # with open("response.json", "r") as file:
-        #   json_response = json.load(file)
+        # with open("app/response.json", "r") as file:
+        #    json_response = json.load(file)
         # json_response = json.loads(result)
         print("json response = ", json_response, "\n\n\n")
         print("last ten =", json_response["workloads"][-10:], "\n\n\n")
         las_ten = json_response["workloads"][-10:]
+        if not json_response["workloads"]:
+            return []
         print(las_ten[0]["resources"], "\n\n\n")
         for item in las_ten:
             for key, val in item["resources"].items():
