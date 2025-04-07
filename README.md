@@ -26,7 +26,7 @@ Documentation on setting up the virtual environment, installing dependencies, an
 The service can be invoked by issuing an HTTP POST request with the [sample input data](./client/input.json) provided:
 ```bash
 curl -X POST -H "Content-Type: application/json" \
-    --data-binary "@client/input.json"
+    --data-binary "@client/input.json" \
     http://127.0.0.1:8000/predict
 ```
 
