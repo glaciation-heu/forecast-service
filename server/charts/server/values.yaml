@@ -26,9 +26,7 @@ service:
   type: ClusterIP
   port: 80
 
-resources:
-  limits:
-    nvidia.com/gpu: 1
+resources: {}
 
 livenessProbe:
   httpGet:
