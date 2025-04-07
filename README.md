@@ -22,6 +22,14 @@ pre-commit install
 Go to the `/server` folder to install dependencies and work on the server application.  
 Documentation on setting up the virtual environment, installing dependencies, and working with the server can be found [here](./server/README.md).
 
+## Usage
+The service can be invoked by issuing an HTTP POST request with the [sample input data](./client/input.json) provided:
+```bash
+curl -X POST -H "Content-Type: application/json" \
+    --data-binary "@client/input.json"
+    http://127.0.0.1:8000/predict
+```
+
 ## Release
 The application version is specified in the VERSION file. The version should follow the format a.a.a, where 'a' is a number.  
 To create a release, update the version in the VERSION file and add a tag in GIT.  
