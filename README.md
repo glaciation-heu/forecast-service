@@ -27,7 +27,7 @@ The service can be invoked by issuing an HTTP POST request with the [sample inpu
 ```bash
 curl -X POST -H "Content-Type: application/json" \
     --data-binary "@client/input.json" \
-    http://forecast.integration:8000/predict
+    http://forecast.integration/predict
 ```
 
 ## Release
