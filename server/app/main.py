@@ -26,9 +26,9 @@ class CustomFastAPI(FastAPI):
         if self.openapi_schema:
             return self.openapi_schema
         openapi_schema = get_openapi(
-            title="Template web service",
+            title="Forecast Service",
             version="0.0.0",
-            description="This is a template of a web service",
+            description="This is a short-term prediction service",
             contact={
                 "name": "HIRO-MicroDataCenters",
                 "email": "all-hiro@hiro-microdatacenters.nl",
@@ -98,7 +98,7 @@ def generate_shapley_plots(model, x_inputs, n_steps, name_feature):
     shap_values = shap_values.reshape(-1, n_steps)
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    shap.summary_plot(shap_values, x_inputs, plot_type="bar", show=False)
+    shap.summary_plot(shap_values, x_inputs, plot_type="violin", show=False)
 
     ax.set_title(name_feature + " Input Features Contribution", fontsize=14)
 
@@ -131,8 +131,10 @@ def read_root():
 )
 def predict(data: InputData) -> Dict[str, Any]:
     try:
+        xai_time = 0.0
         start_time = time.time()
         features_inputs = get_input_features()
+        input_features_response_time = time.time() - start_time
         print(features_inputs)
         main_results: dict[str, Any] = {}
         if not features_inputs:
@@ -255,6 +257,7 @@ def predict(data: InputData) -> Dict[str, Any]:
                 input_data = np.roll(input_data, -1)
                 input_data[-1] = prediction
 
+            start_time_xai = time.time()
             results["Explanation_plot"] = (
                 generate_shapley_plots(
                     model, list_of_input_data, len(input_data), name_of_feature
@@ -262,14 +265,24 @@ def predict(data: InputData) -> Dict[str, Any]:
                 if xai is True
                 else None
             )
+            end_time_xai = time.time()
+            xai_time += end_time_xai - start_time_xai
 
             print(pd.DataFrame(results))
 
             main_results[name_of_feature] = results
 
-        end_time = time.time()
-        print("execution time = ", end_time - start_time, " seconds")
-
+        exec_time = time.time() - start_time
+        cpu_time = exec_time - input_features_response_time - xai_time
+        print("execution time = ", exec_time, " seconds")
+        print("request response time = ", input_features_response_time, " seconds")
+        print("XAI graphs generation time = ", xai_time, " seconds")
+        print("cpu time = ", cpu_time, " seconds")
+        print(
+            "sum of cpu/xai/req times = ",
+            cpu_time + xai_time + input_features_response_time,
+            " seconds",
+        )
         return main_results
 
     except ValueError as e:

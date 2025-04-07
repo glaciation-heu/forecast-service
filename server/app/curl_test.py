@@ -6,7 +6,6 @@ import requests
 
 
 def get_input_features():
-
     current_time = datetime.now()
 
     start_time = current_time - timedelta(minutes=20)
@@ -24,7 +23,7 @@ def get_input_features():
     print(formatted_end_time)
     # Define the request url
     url_req = (
-        "http://trade-off-service/api/v1/clusters/hh/workloads?startTime="
+        "http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="
         + formatted_start_time_str
         + "&endTime="
         + formatted_end_time_str

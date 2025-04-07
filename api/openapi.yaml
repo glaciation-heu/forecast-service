@@ -1,14 +1,14 @@
 openapi: 3.1.0
 info:
-  title: Template web service
-  description: This is a template of a web service
+  title: Forecast Service
+  description: This is a short-term prediction service
   contact:
     name: HIRO-MicroDataCenters
     email: all-hiro@hiro-microdatacenters.nl
   license:
     name: MIT
     url: https://github.com/HIRO-MicroDataCenters-BV/template-python/blob/main/LICENSE
-  version: 0.0.0
+  version: 0.3.11
 paths:
   /metrics:
     get:
@@ -32,12 +32,67 @@ paths:
             application/json:
               schema: {}
   /predict:
-    get:
+    post:
       summary: Predict using LSTM-BNN
-      operationId: predict_predict_get
+      operationId: predict_predict_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InputData'
+        required: true
       responses:
         '200':
           description: Prediction result
           content:
             application/json:
-              schema: {}
+              schema:
+                type: object
+                title: Response Predict Predict Post
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    InputData:
+      properties:
+        xai_graph:
+          type: boolean
+          title: Xai Graph
+      type: object
+      required:
+      - xai_graph
+      title: InputData
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
