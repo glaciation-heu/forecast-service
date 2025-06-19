@@ -13,20 +13,20 @@ class LSTM_BNN(nn.Module):
             hidden_size,
             num_layers,
             batch_first=True,
-            bidirectional=True,
+            bidirectional=False,
             dropout=dropout,
         )
         # self.dropout = nn.Dropout(0.3)
         self.bayes_fc = bnn.BayesLinear(
             prior_mu=0.0,
             prior_sigma=0.1,
-            in_features=hidden_size * 2,
+            in_features=hidden_size * 1,
             out_features=output_size,
         )
         self.bayes_sigma = bnn.BayesLinear(
             prior_mu=0,
             prior_sigma=0.1,
-            in_features=hidden_size * 2,
+            in_features=hidden_size * 1,
             out_features=output_size,
         )
         # self.last_func = output_functions[featurename]
