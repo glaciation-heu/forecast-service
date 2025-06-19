@@ -4,6 +4,8 @@ import base64
 import io
 import pickle
 import time
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
@@ -16,8 +18,6 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.openapi.utils import get_openapi
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
-from contextlib import asynccontextmanager
-from collections.abc import AsyncGenerator
 
 from app.curl_test import get_input_features
 from app.models import LSTM_BNN
