@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 import base64
 import io
@@ -59,7 +59,7 @@ name_of_features = [
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print("🔄 Loading Models and Scalers ...")
-    app.state.assets = {}  # type: dict[str, str]
+    app.state.assets = cast(dict[str, str], {})
     for feature in name_of_features:
         output_size = (
             1 if feature in class_exempt_features else output_sizes_of_features[feature]
