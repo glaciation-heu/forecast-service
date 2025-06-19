@@ -39,7 +39,6 @@ def get_input_features():
         response = requests.get(url_req)
         end_req_time = time.time()
         print("URL request time = ", end_req_time - start_req_time, " seconds")
-        json_response = None
         if response.status_code == 200:
             # print("response OK")
             json_response = response.json()

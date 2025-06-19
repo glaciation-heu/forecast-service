@@ -17,6 +17,7 @@ from fastapi.openapi.utils import get_openapi
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
 
 from app.curl_test import get_input_features
 from app.models import LSTM_BNN
@@ -56,9 +57,9 @@ name_of_features = [
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     print("🔄 Loading Models and Scalers ...")
-    app.state.assets: dict[str, str] = {}
+    app.state.assets = {}  # type: dict[str, str]
     for feature in name_of_features:
         output_size = (
             1 if feature in class_exempt_features else output_sizes_of_features[feature]
@@ -179,7 +180,7 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
         input_features_response_time = time.time() - start_time
         # print("features inputs => ", all_workloads)  # features_inputs)
 
-        main_results = list()  #: dict[str, Any] = {}
+        main_results: list[Any] = list()  #: dict[str, Any] = {}
         if not all_workloads:  # features_inputs:
             return main_results
         xai = data.xai_graph
