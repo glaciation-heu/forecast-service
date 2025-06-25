@@ -8,7 +8,7 @@ info:
   license:
     name: MIT
     url: https://github.com/HIRO-MicroDataCenters-BV/template-python/blob/main/LICENSE
-  version: 0.3.11
+  version: 0.3.14
 paths:
   /metrics:
     get:
@@ -47,7 +47,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                items:
+                  type: object
+                type: array
                 title: Response Predict Predict Post
         '422':
           description: Validation Error
@@ -71,9 +73,13 @@ components:
         xai_graph:
           type: boolean
           title: Xai Graph
+        interval:
+          type: number
+          title: Interval
       type: object
       required:
       - xai_graph
+      - interval
       title: InputData
     ValidationError:
       properties:

@@ -7,12 +7,17 @@ from datetime import datetime, timedelta
 import pytz
 import requests
 
+end_time = datetime.now()
+
 
 def get_input_features():
-    current_time = datetime.now()
+    # current_time = datetime.now()
 
-    start_time = current_time - timedelta(minutes=20)
-    end_time = current_time - timedelta(minutes=10)
+    global end_time
+    start_time = end_time - timedelta(minutes=5)
+    end_time -= timedelta(minutes=0)
+    # start_time = current_time - timedelta(minutes=20)
+    # end_time = current_time - timedelta(minutes=10)
 
     # print(start_time)
     # print(end_time)
@@ -32,13 +37,16 @@ def get_input_features():
         + "&endTime="
         + formatted_end_time_str
     )
-    # print("requested url: ", url_req)
+    print("requested url: ", url_req)
     # Invoke request and parse json response
+    tradeoff_service_response_time = 0.0
     try:
         start_req_time = time.time()
         response = requests.get(url_req)
         end_req_time = time.time()
+        tradeoff_service_response_time = end_req_time - start_req_time
         print("URL request time = ", end_req_time - start_req_time, " seconds")
+        json_response = None
         if response.status_code == 200:
             # print("response OK")
             json_response = response.json()
@@ -57,8 +65,9 @@ def get_input_features():
         # print("json response = ", json_response, "\n\n\n")
         # print("last ten =", json_response["workloads"][-10:], "\n\n\n")
         # las_ten = json_response["workloads"][-10:]
-        if not json_response["workloads"]:
+        if json_response is None:
             return []
+        print("json_response[workloads] = ", json_response)
         # print(las_ten[0]["resources"], "\n\n\n")
         list_of_worker_node_ids = []
         for workload_item in json_response["workloads"]:
@@ -111,11 +120,11 @@ def get_input_features():
 
         # print("list of all workloads = ", list_of_all_workloads)
 
-        return list_of_all_workloads
+        return list_of_all_workloads, tradeoff_service_response_time
 
     except requests.exceptions.RequestException as e:
-        # print("Request failed: ", e)
-        return e
+        print("Request failed: ", e)
+        return e, tradeoff_service_response_time
 
 
 # inputs = get_input_features()

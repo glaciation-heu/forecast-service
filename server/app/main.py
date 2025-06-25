@@ -6,11 +6,13 @@ import pickle
 import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import timedelta  # , datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
+import requests
+
+# import pandas as pd
 import shap
 import torch
 import torch.nn.functional as F
@@ -19,7 +21,7 @@ from fastapi.openapi.utils import get_openapi
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
-from app.curl_test import get_input_features
+from app.curl_test import end_time, get_input_features
 from app.models import LSTM_BNN
 
 
@@ -157,6 +159,7 @@ def generate_shapley_plots(model, x_inputs, n_steps, name_feature):
 
 class InputData(BaseModel):
     xai_graph: bool
+    interval: float
     # input_feature: str  # Example "nproc"
     # input: list[Any]  # Example: [20.0, 40.0, 60.0]
 
@@ -176,14 +179,18 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
         xai_time = 0.0
         start_time = time.time()
         # features_inputs = get_input_features()
-        all_workloads = get_input_features()
+        all_workloads, tradeoff_response_time = get_input_features()
+        tradeoff_response_time *= 1000.0
         input_features_response_time = time.time() - start_time
         # print("features inputs => ", all_workloads)  # features_inputs)
 
         main_results: list[Any] = list()  #: dict[str, Any] = {}
-        if not all_workloads:  # features_inputs:
+        if isinstance(all_workloads, requests.exceptions.RequestException):
+            # This means string is returned with exception error msg.
             return main_results
         xai = data.xai_graph
+        prediction_interval_iterations = int(data.interval * 10)
+        forecast_interval = data.interval * 60.0 * 1000.0
         for workload in all_workloads:
             partial_results: dict[str, Any] = {
                 "worker_node_id": workload["worker_node_id"],
@@ -226,9 +233,9 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
                         "Explanation_plot": Any,
                     }
 
-                    timestamp = datetime.now()
+                    timestamp = end_time  # datetime.now()
                     list_of_input_data = []
-                    for i in range(10):
+                    for i in range(prediction_interval_iterations):
                         if name_of_feature not in class_exempt_features:
                             # Load LabelEncoder
                             with open(
@@ -357,6 +364,12 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
                     partial_results[name_of_feature][metric] = results
 
             main_results.append(partial_results)  # [name_of_feature] = results
+            main_results.append(
+                {
+                    "Tradeoff Service Response Time": tradeoff_response_time,
+                    "Forecast Interval": forecast_interval,
+                }
+            )
 
         exec_time = time.time() - start_time
         cpu_time = exec_time - input_features_response_time - xai_time
