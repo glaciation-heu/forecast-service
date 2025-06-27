@@ -31,10 +31,10 @@ curl -X POST -H "Content-Type: application/json" \
 ```
 The following parameters are expected in the input data file.
 
-| Name      | Type    | Description                      |
-| ----      | ----    | -----------                      |
-| xai_graph | boolean | Whether to generate an XAI plot  |
-| interval  | float   | The forecast period (in minutes) |
+| Name      | Type    | Description                                          | Default |
+| ----      | ----    | -----------                                          | ------- |
+| xai_graph | boolean | Whether to generate an XAI plot                      | N/A     |
+| interval  | float   | The interval in minutes before the earliest forecast | `0`     |
 
 ## Release
 The application version is specified in the VERSION file. The version should follow the format a.a.a, where 'a' is a number.  
