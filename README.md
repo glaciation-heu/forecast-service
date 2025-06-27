@@ -23,12 +23,18 @@ Go to the `/server` folder to install dependencies and work on the server applic
 Documentation on setting up the virtual environment, installing dependencies, and working with the server can be found [here](./server/README.md).
 
 ## Usage
-The service can be invoked by issuing an HTTP POST request with the [sample input data](./client/input.json) provided. For example:
+The service can be invoked by issuing an HTTP POST request with the [sample input data file](./client/input.json) provided. For example:
 ```bash
 curl -X POST -H "Content-Type: application/json" \
     --data-binary "@client/input.json" \
     http://forecast.integration/predict
 ```
+The following parameters are expected in the input data file.
+
+| Name      | Type    | Description                      |
+| ----      | ----    | -----------                      |
+| xai_graph | boolean | Whether to generate an XAI plot  |
+| interval  | float   | The forecast period (in minutes) |
 
 ## Release
 The application version is specified in the VERSION file. The version should follow the format a.a.a, where 'a' is a number.  
