@@ -1,1 +1,4 @@
-{"xai_graph": "False"}
+{
+	"xai_graph": "False",
+	"interval": 2
+}
