@@ -82,6 +82,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         app.state.assets[feature + "_scaler"] = scaler
 
+        if feature != "Power_Consumption(uJ)":
+            model_path = root_path + feature + "_model_state_dict_simulation.pth"
+            model.load_state_dict(
+                torch.load(model_path, weights_only=True, map_location="cpu")
+            )
+            # model = model.to("cuda")
+            # print(model)
+            model.eval()
+            app.state.assets[feature + "_simulation_model"] = model
+
+            with open(root_path + "scaler_" + feature + "_simulation.pkl", "rb") as f:
+                scaler = pickle.load(f)  # Ensure consistency with training
+
+            app.state.assets[feature + "_simulation_scaler"] = scaler
+
     print("✅ Models and Scalers loaded.")
     yield
     print("🔻 Shutting down.")
@@ -159,6 +174,7 @@ def generate_shapley_plots(model, x_inputs, n_steps, name_feature):
 
 class InputData(BaseModel):
     xai_graph: bool
+    simulate: bool
     interval: float
     # input_feature: str  # Example "nproc"
     # input: list[Any]  # Example: [20.0, 40.0, 60.0]
@@ -179,7 +195,7 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
         xai_time = 0.0
         start_time = time.time()
         # features_inputs = get_input_features()
-        all_workloads, tradeoff_response_time = get_input_features()
+        all_workloads, tradeoff_response_time = get_input_features(data.simulate)
         tradeoff_response_time *= 1000.0
         input_features_response_time = time.time() - start_time
         # print("features inputs => ", all_workloads)  # features_inputs)
@@ -191,6 +207,14 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
         xai = data.xai_graph
         prediction_interval_iterations = int(data.interval * 10)
         forecast_interval = data.interval * 60.0 * 1000.0
+
+        main_results.append(
+            {
+                "Tradeoff Service Response Time": tradeoff_response_time,
+                "Forecast Interval": forecast_interval,
+            }
+        )
+
         for workload in all_workloads:
             partial_results: dict[str, Any] = {
                 "worker_node_id": workload["worker_node_id"],
@@ -218,8 +242,19 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
                 # model = model.to("cuda")
                 # print(model)
                 # model.eval()
-                model = request.app.state.assets[name_of_feature + "_model"]
-                scaler = request.app.state.assets[name_of_feature + "_scaler"]
+                if (
+                    data.simulate == "True"
+                    and name_of_feature != "Power_Consumption(uJ)"
+                ):
+                    model = request.app.state.assets[
+                        name_of_feature + "_simulation_model"
+                    ]
+                    scaler = request.app.state.assets[
+                        name_of_feature + "_simulation_scaler"
+                    ]
+                else:
+                    model = request.app.state.assets[name_of_feature + "_model"]
+                    scaler = request.app.state.assets[name_of_feature + "_scaler"]
 
                 for metric, input_data in struct_data.items():
                     # Get input data
@@ -321,12 +356,12 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
 
                         else:
                             output_unscaled = scaler.inverse_transform(output)
-                            # uncertainty_unscaled = uncertainty * (
-                            #    scaler.data_max_ - scaler.data_min_
-                            # )
                             uncertainty_unscaled = uncertainty * (
-                                scaler.center_ - scaler.scale_
+                                scaler.data_max_ - scaler.data_min_
                             )
+                            # uncertainty_unscaled = uncertainty * (
+                            #     scaler.center_ - scaler.scale_
+                            # )
                             # print("output=", output_unscaled[0][0])
                             # print("uncertainty=", uncertainty_unscaled[0][0])
                             prediction = output_unscaled[0][0]
@@ -364,12 +399,6 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
                     partial_results[name_of_feature][metric] = results
 
             main_results.append(partial_results)  # [name_of_feature] = results
-            main_results.append(
-                {
-                    "Tradeoff Service Response Time": tradeoff_response_time,
-                    "Forecast Interval": forecast_interval,
-                }
-            )
 
         exec_time = time.time() - start_time
         cpu_time = exec_time - input_features_response_time - xai_time
@@ -382,6 +411,7 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
             cpu_time + xai_time + input_features_response_time,
             " seconds",
         )
+
         return main_results
 
     except ValueError as e:

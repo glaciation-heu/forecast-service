@@ -32,10 +32,12 @@ class LSTM_BNN(nn.Module):
         # self.last_func = output_functions[featurename]
         """
         # LSTM Layer
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
+        self.lstm = nn.LSTM(input_size, hidden_size,
+        num_layers, batch_first=True, dropout=dropout)
 
         # Bayesian Fully Connected Layer
-        self.bayes_fc = bnn.BayesLinear(prior_mu=0, prior_sigma=0.1, in_features=hidden_size, out_features=output_size)
+        self.bayes_fc = bnn.BayesLinear(prior_mu=0, prior_sigma=0.1,
+        in_features=hidden_size, out_features=output_size)
         """
 
     def forward(self, x):

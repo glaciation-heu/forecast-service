@@ -10,7 +10,7 @@ import requests
 end_time = datetime.now()
 
 
-def get_input_features():
+def get_input_features(simulate):
     # current_time = datetime.now()
 
     global end_time
@@ -31,24 +31,37 @@ def get_input_features():
     # print(formatted_end_time)
     # Define the request url
     url_req = (
-        "http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="
-        # "http://trade-off-service/api/v1/clusters/hh/workloads?startTime="
-        + formatted_start_time_str
-        + "&endTime="
-        + formatted_end_time_str
+        (
+            # "http://tradeoff.validation/api/v1/clusters/hh/wnode?startTime="
+            "http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="
+            # "http://trade-off-service/api/v1/clusters/hh/workloads?startTime="
+            + formatted_start_time_str
+            + "&endTime="
+            + formatted_end_time_str
+        )
+        if simulate is False
+        else "https://entire.insight-centre.org/simulator-ws/simulate"
     )
+
     print("requested url: ", url_req)
     # Invoke request and parse json response
     tradeoff_service_response_time = 0.0
     try:
         start_req_time = time.time()
-        response = requests.get(url_req)
+        if not simulate:
+            response = requests.get(url_req)
+        else:
+            headers = {"Content-Type": "application/json"}
+            with open("requests.json", "rb") as f:
+                data = f.read()
+            response = requests.post(url_req, data=data, headers=headers, verify=False)
+
         end_req_time = time.time()
         tradeoff_service_response_time = end_req_time - start_req_time
         print("URL request time = ", end_req_time - start_req_time, " seconds")
         json_response = None
         if response.status_code == 200:
-            # print("response OK")
+            print("response OK")
             json_response = response.json()
 
         keys_to_features: dict[str, str] = {
@@ -67,7 +80,12 @@ def get_input_features():
         # las_ten = json_response["workloads"][-10:]
         if json_response is None:
             return []
-        print("json_response[workloads] = ", json_response)
+
+        # print("json_response[workloads] = ", json_response)
+
+        # with open('data.json', 'w', encoding='utf-8') as f:
+        #    json.dump(json_response, f, ensure_ascii=False, indent=4)
+
         # print(las_ten[0]["resources"], "\n\n\n")
         list_of_worker_node_ids = []
         for workload_item in json_response["workloads"]:
@@ -112,6 +130,11 @@ def get_input_features():
                             features_inputs[key][metric] = list(
                                 map(lambda x: x * 10**9, features_inputs[key][metric])
                             )
+                    if simulate is True:
+                        features_inputs[key]["used"] = features_inputs[key]["allocated"]
+                        features_inputs[key]["demanded"] = features_inputs[key][
+                            "allocated"
+                        ]
 
             list_of_all_workloads.append(features_inputs)
 
