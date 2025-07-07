@@ -243,7 +243,7 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
                 # print(model)
                 # model.eval()
                 if (
-                    data.simulate == "True"
+                    data.simulate is True
                     and name_of_feature != "Power_Consumption(uJ)"
                 ):
                     model = request.app.state.assets[
