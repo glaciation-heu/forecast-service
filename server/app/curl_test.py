@@ -100,41 +100,46 @@ def get_input_features(simulate):
         for worker_node_id in list_of_worker_node_ids:
             features_inputs: dict[str, Any] = {
                 "worker_node_id": None,
-                "CPU_Usage(%)": {"used": [], "demanded": [], "allocated": []},
-                "Memory_Usage(MB)": {"used": [], "demanded": [], "allocated": []},
-                "Disk_Usage(MB)": {"used": [], "demanded": [], "allocated": []},
-                "Network_Recv(KB)": {"used": [], "demanded": [], "allocated": []},
-                "Power_Consumption(uJ)": {"used": [], "demanded": [], "allocated": []},
+                "CPU_Usage(%)": [],
+                # {"used": [], "demanded": [], "allocated": []},
+                "Memory_Usage(MB)": [],
+                # {"used": [], "demanded": [], "allocated": []},
+                "Disk_Usage(MB)": [],
+                # {"used": [], "demanded": [], "allocated": []},
+                "Network_Recv(KB)": [],
+                # {"used": [], "demanded": [], "allocated": []},
+                "Power_Consumption(uJ)": [],
+                # {"used": [], "demanded": [], "allocated": []},
             }
             for workload_item in json_response["workloads"]:
                 if worker_node_id == workload_item["runs_on"]["worker_node_id"]:
                     features_inputs["worker_node_id"] = worker_node_id
                     for key, val in workload_item["resources"].items():
-                        for metric in ["used", "demanded", "allocated"]:
-                            if workload_item["resources"][key].get(metric) is None:
-                                features_inputs[keys_to_features[key]][metric].append(
-                                    0.0
+                        # for metric in ["used", "demanded", "allocated"]:
+                        if workload_item["resources"][key].get("used") is None:
+                            if simulate is True and key != "energy":
+                                features_inputs[keys_to_features[key]].append(
+                                    float(workload_item["resources"][key]["allocated"])
                                 )
                             else:
-                                features_inputs[keys_to_features[key]][metric].append(
-                                    float(workload_item["resources"][key][metric])
-                                )
+                                features_inputs[keys_to_features[key]].append(0.0)
+                        else:
+                            features_inputs[keys_to_features[key]].append(
+                                float(workload_item["resources"][key]["used"])
+                            )
 
+                            # = features_inputs[key]["allocated"]
+                            # features_inputs[key]["demanded"] = features_inputs[key][
+                            #    "allocated"
+                            # ]
             for key, val in features_inputs.items():
                 if key != "worker_node_id":
-                    for metric in ["used", "demanded", "allocated"]:
-                        features_inputs[key][metric] = (
-                            val[metric] + [0.0] * (10 - len(val[metric]))
-                        )[-10:]
-                        if key == "Power_Consumption(uJ)":
-                            features_inputs[key][metric] = list(
-                                map(lambda x: x * 10**9, features_inputs[key][metric])
-                            )
-                    if simulate is True:
-                        features_inputs[key]["used"] = features_inputs[key]["allocated"]
-                        features_inputs[key]["demanded"] = features_inputs[key][
-                            "allocated"
-                        ]
+                    # for metric in ["used", "demanded", "allocated"]:
+                    features_inputs[key] = (val + [0.0] * (10 - len(val)))[-10:]
+                    if key == "Power_Consumption(uJ)":
+                        features_inputs[key] = list(
+                            map(lambda x: x * 10**9, features_inputs[key])
+                        )
 
             list_of_all_workloads.append(features_inputs)
 

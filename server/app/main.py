@@ -218,13 +218,19 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
         for workload in all_workloads:
             partial_results: dict[str, Any] = {
                 "worker_node_id": workload["worker_node_id"],
-                "CPU_Usage(%)": {"used": {}, "demanded": {}, "allocated": {}},
-                "Memory_Usage(MB)": {"used": {}, "demanded": {}, "allocated": {}},
-                "Disk_Usage(MB)": {"used": {}, "demanded": {}, "allocated": {}},
-                "Network_Recv(KB)": {"used": {}, "demanded": {}, "allocated": {}},
-                "Power_Consumption(uJ)": {"used": {}, "demanded": {}, "allocated": {}},
+                "CPU_Usage(%)": {},
+                # {"used": {}, "demanded": {}, "allocated": {}},
+                "Memory_Usage(MB)": {},
+                # {"used": {}, "demanded": {}, "allocated": {}},
+                "Disk_Usage(MB)": {},
+                # {"used": {}, "demanded": {}, "allocated": {}},
+                "Network_Recv(KB)": {},
+                # {"used": {}, "demanded": {}, "allocated": {}},
+                "Power_Consumption(uJ)": {},
+                # {"used": {}, "demanded": {}, "allocated": {}},
             }
-            for name_of_feature, struct_data in workload.items():
+            for name_of_feature, input_data in workload.items():
+                # struct_data in workload.items():
                 if name_of_feature == "worker_node_id":
                     continue
                 # name_of_feature = data.input_feature
@@ -242,161 +248,156 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
                 # model = model.to("cuda")
                 # print(model)
                 # model.eval()
-                if (
-                    data.simulate is True
-                    and name_of_feature != "Power_Consumption(uJ)"
-                ):
+                if data.simulate is True and name_of_feature != "Power_Consumption(uJ)":
                     model = request.app.state.assets[
                         name_of_feature + "_simulation_model"
                     ]
                     scaler = request.app.state.assets[
                         name_of_feature + "_simulation_scaler"
                     ]
+                    # print("simulation model and scaler loaded....")
                 else:
                     model = request.app.state.assets[name_of_feature + "_model"]
                     scaler = request.app.state.assets[name_of_feature + "_scaler"]
+                    # print("real time model and scaler loaded....")
 
-                for metric, input_data in struct_data.items():
-                    # Get input data
-                    # input_data = data.input
-                    # print("input_data=", input_data)
+                # for metric, input_data in struct_data.items():
+                # Get input data
+                # input_data = data.input
+                # print("input_data=", input_data)
 
-                    results: dict[str, Any] = {
-                        "Timestamp": [],
-                        "predictions": [],
-                        "uncertainties": [],
-                        "Explanation_plot": Any,
-                    }
+                results: dict[str, Any] = {
+                    "Timestamp": [],
+                    "predictions": [],
+                    "uncertainties": [],
+                    "Explanation_plot": Any,
+                }
 
-                    timestamp = end_time  # datetime.now()
-                    list_of_input_data = []
-                    for i in range(prediction_interval_iterations):
-                        if name_of_feature not in class_exempt_features:
-                            # Load LabelEncoder
-                            with open(
-                                root_path + "label_encoder_" + name_of_feature + ".pkl",
-                                "rb",
-                            ) as f:
-                                label_encoder = pickle.load(
-                                    f
-                                )  # Ensure consistency with training
+                timestamp = end_time  # datetime.now()
+                list_of_input_data = []
+                for i in range(prediction_interval_iterations):
+                    if name_of_feature not in class_exempt_features:
+                        # Load LabelEncoder
+                        with open(
+                            root_path + "label_encoder_" + name_of_feature + ".pkl",
+                            "rb",
+                        ) as f:
+                            label_encoder = pickle.load(
+                                f
+                            )  # Ensure consistency with training
 
-                            # Convert categorical input to numerical using LabelEncoder
-                            encoded_input = label_encoder.transform(input_data)
-                            # print("encoded_input=", encoded_input)
-                            encoded_input = encoded_input.reshape(1, len(input_data), 1)
-                            # Convert to PyTorch tensor
-                            input_tensor = torch.tensor(
-                                encoded_input, dtype=torch.float32
-                            )  # .unsqueeze(0)  # Add batch dimension
-                            # print("input_tensor=", input_tensor)
+                        # Convert categorical input to numerical using LabelEncoder
+                        encoded_input = label_encoder.transform(input_data)
+                        # print("encoded_input=", encoded_input)
+                        encoded_input = encoded_input.reshape(1, len(input_data), 1)
+                        # Convert to PyTorch tensor
+                        input_tensor = torch.tensor(
+                            encoded_input, dtype=torch.float32
+                        )  # .unsqueeze(0)  # Add batch dimension
+                        # print("input_tensor=", input_tensor)
 
-                        else:  # if a feature is regression feature...
-                            input_data = np.array(input_data)
-                            # Load Scaler for normalization
-                            # with open(
-                            #    root_path + "scaler_" + name_of_feature + ".pkl", "rb"
-                            # ) as f:
-                            #    scaler = pickle.load(
-                            #        f
-                            #    )  # Ensure consistency with training
+                    else:  # if a feature is regression feature...
+                        input_data = np.array(input_data)
+                        # Load Scaler for normalization
+                        # with open(
+                        #    root_path + "scaler_" + name_of_feature + ".pkl", "rb"
+                        # ) as f:
+                        #    scaler = pickle.load(
+                        #        f
+                        #    )  # Ensure consistency with training
 
-                            input_data_scaled = scaler.transform(
-                                input_data.reshape(-1, 1)
-                            )
+                        input_data_scaled = scaler.transform(input_data.reshape(-1, 1))
 
-                            input_data_scaled = input_data_scaled.reshape(
-                                1, len(input_data), 1
-                            )
-                            input_tensor = torch.tensor(
-                                input_data_scaled, dtype=torch.float32
-                            )
-                            # print("input_tensor=", input_tensor)
-
-                        list_of_input_data.append(input_tensor.numpy())
-                        with torch.no_grad():
-                            # #print('model output = ',model(input_tensor))
-                            output, uncertainty = model(input_tensor)
-                            # print("output=", output)
-                            # print("uncertainty=", uncertainty)
-
-                            output = output.cpu().detach().numpy()
-                            uncertainty = uncertainty.cpu().detach().numpy()
-
-                        if name_of_feature not in class_exempt_features:
-                            # Apply softmax to get probabilities
-                            probabilities = F.softmax(
-                                torch.Tensor(output), dim=-1
-                            )  # .tolist()[0]
-                            # prob_uncert = F.softmax(torch.Tensor(uncertainty),
-                            # dim=-1).tolist()[0]
-                            # print("probabilities=", probabilities)
-                            # #print('prob_uncert=',prob_uncert)
-                            # Get predicted class index
-                            predicted_index = torch.argmax(
-                                probabilities, dim=1
-                            )  # .item())
-                            # pred_unce_index = torch.argmax(prob_uncert,
-                            # dim=1)#.item())
-                            # print("predicted_index=", predicted_index)
-                            # #print('pred_unce_index=',pred_unce_index)
-                            # Decode the predicted index back to original label
-                            predicted_label = label_encoder.inverse_transform(
-                                predicted_index.numpy().ravel()
-                            )
-                            # pred_unce_label = label_encoder.inverse_transform(
-                            # pred_unce_index.numpy().ravel())
-                            # print("predicted_label=", predicted_label)
-                            # print("uncertainty=", uncertainty)
-                            # #print('pred_unce_label=', pred_unce_label)
-                            prediction = predicted_label[0]
-                            uncertaintii = uncertainty[0]
-                            # return {"prediction": predicted_label[0],
-                            # "uncertainty": pred_unce_label[0]}
-
-                        else:
-                            output_unscaled = scaler.inverse_transform(output)
-                            uncertainty_unscaled = uncertainty * (
-                                scaler.data_max_ - scaler.data_min_
-                            )
-                            # uncertainty_unscaled = uncertainty * (
-                            #     scaler.center_ - scaler.scale_
-                            # )
-                            # print("output=", output_unscaled[0][0])
-                            # print("uncertainty=", uncertainty_unscaled[0][0])
-                            prediction = output_unscaled[0][0]
-                            uncertaintii = uncertainty_unscaled[0][0]
-                            # return {"prediction": str(output_unscaled[0][0]),
-                            # "uncertainty": str(uncertainty_unscaled[0][0])}
-
-                        results["Timestamp"].append(str(timestamp))
-                        results["predictions"].append(str(prediction))
-                        results["uncertainties"].append(str(uncertaintii))
-
-                        timestamp += timedelta(seconds=6)
-                        input_data = np.roll(input_data, -1)
-                        input_data[-1] = prediction
-
-                    start_time_xai = time.time()
-                    results["Explanation_plot"] = (
-                        generate_shapley_plots(
-                            model, list_of_input_data, len(input_data), name_of_feature
+                        input_data_scaled = input_data_scaled.reshape(
+                            1, len(input_data), 1
                         )
-                        if xai is True
-                        else None
+                        input_tensor = torch.tensor(
+                            input_data_scaled, dtype=torch.float32
+                        )
+                        # print("input_tensor=", input_tensor)
+
+                    list_of_input_data.append(input_tensor.numpy())
+                    with torch.no_grad():
+                        # #print('model output = ',model(input_tensor))
+                        output, uncertainty = model(input_tensor)
+                        # print("output=", output)
+                        # print("uncertainty=", uncertainty)
+
+                        output = output.cpu().detach().numpy()
+                        uncertainty = uncertainty.cpu().detach().numpy()
+
+                    if name_of_feature not in class_exempt_features:
+                        # Apply softmax to get probabilities
+                        probabilities = F.softmax(
+                            torch.Tensor(output), dim=-1
+                        )  # .tolist()[0]
+                        # prob_uncert = F.softmax(torch.Tensor(uncertainty),
+                        # dim=-1).tolist()[0]
+                        # print("probabilities=", probabilities)
+                        # #print('prob_uncert=',prob_uncert)
+                        # Get predicted class index
+                        predicted_index = torch.argmax(probabilities, dim=1)  # .item())
+                        # pred_unce_index = torch.argmax(prob_uncert,
+                        # dim=1)#.item())
+                        # print("predicted_index=", predicted_index)
+                        # #print('pred_unce_index=',pred_unce_index)
+                        # Decode the predicted index back to original label
+                        predicted_label = label_encoder.inverse_transform(
+                            predicted_index.numpy().ravel()
+                        )
+                        # pred_unce_label = label_encoder.inverse_transform(
+                        # pred_unce_index.numpy().ravel())
+                        # print("predicted_label=", predicted_label)
+                        # print("uncertainty=", uncertainty)
+                        # #print('pred_unce_label=', pred_unce_label)
+                        prediction = predicted_label[0]
+                        uncertaintii = uncertainty[0]
+                        # return {"prediction": predicted_label[0],
+                        # "uncertainty": pred_unce_label[0]}
+
+                    else:
+                        output_unscaled = scaler.inverse_transform(output)
+                        uncertainty_unscaled = uncertainty * (
+                            scaler.data_max_ - scaler.data_min_
+                        )
+                        # uncertainty_unscaled = uncertainty * (
+                        #     scaler.center_ - scaler.scale_
+                        # )
+                        # print("output=", output_unscaled[0][0])
+                        # print("uncertainty=", uncertainty_unscaled[0][0])
+                        prediction = output_unscaled[0][0]
+                        uncertaintii = uncertainty_unscaled[0][0]
+                        # return {"prediction": str(output_unscaled[0][0]),
+                        # "uncertainty": str(uncertainty_unscaled[0][0])}
+
+                    results["Timestamp"].append(str(timestamp))
+                    results["predictions"].append(str(prediction))
+                    results["uncertainties"].append(str(uncertaintii))
+
+                    timestamp += timedelta(seconds=6)
+                    input_data = np.roll(input_data, -1)
+                    input_data[-1] = prediction
+
+                start_time_xai = time.time()
+                results["Explanation_plot"] = (
+                    generate_shapley_plots(
+                        model, list_of_input_data, len(input_data), name_of_feature
                     )
-                    end_time_xai = time.time()
-                    xai_time += end_time_xai - start_time_xai
+                    if xai is True
+                    else None
+                )
+                end_time_xai = time.time()
+                xai_time += end_time_xai - start_time_xai
 
-                    # print(
-                    #    name_of_feature,
-                    #    " ",
-                    #    metric,
-                    #    " results\n",
-                    #    pd.DataFrame(results),
-                    # )
+                # print(
+                #    name_of_feature,
+                #    " ",
+                #    metric,
+                #    " results\n",
+                #    pd.DataFrame(results),
+                # )
 
-                    partial_results[name_of_feature][metric] = results
+                partial_results[name_of_feature] = results
 
             main_results.append(partial_results)  # [name_of_feature] = results
 
