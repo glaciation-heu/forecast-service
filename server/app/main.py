@@ -21,7 +21,7 @@ from fastapi.openapi.utils import get_openapi
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 
-from app.curl_test import end_time, get_input_features
+from app.curl_test import get_input_features
 from app.models import LSTM_BNN
 
 
@@ -195,7 +195,9 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
         xai_time = 0.0
         start_time = time.time()
         # features_inputs = get_input_features()
-        all_workloads, tradeoff_response_time = get_input_features(data.simulate)
+        all_workloads, tradeoff_response_time, e_time = get_input_features(
+            data.simulate
+        )
         tradeoff_response_time *= 1000.0
         input_features_response_time = time.time() - start_time
         # print("features inputs => ", all_workloads)  # features_inputs)
@@ -208,10 +210,16 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
         prediction_interval_iterations = int(data.interval * 10)
         forecast_interval = data.interval * 60.0 * 1000.0
 
+        timestamp_list: list[Any] = list()
+        for count in range(prediction_interval_iterations):
+            e_time += timedelta(seconds=6)
+            timestamp_list.append(e_time)
+
         main_results.append(
             {
                 "Tradeoff Service Response Time": tradeoff_response_time,
                 "Forecast Interval": forecast_interval,
+                "Timestamps": timestamp_list,
             }
         )
 
@@ -267,13 +275,14 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
                 # print("input_data=", input_data)
 
                 results: dict[str, Any] = {
-                    "Timestamp": [],
+                    # "Timestamp": [],
                     "predictions": [],
                     "uncertainties": [],
                     "Explanation_plot": Any,
                 }
 
-                timestamp = end_time  # datetime.now()
+                # timestamp = end_time
+                # datetime.now()
                 list_of_input_data = []
                 for i in range(prediction_interval_iterations):
                     if name_of_feature not in class_exempt_features:
@@ -370,11 +379,11 @@ def predict(request: Request, data: InputData) -> list[dict[str, Any]]:
                         # return {"prediction": str(output_unscaled[0][0]),
                         # "uncertainty": str(uncertainty_unscaled[0][0])}
 
-                    results["Timestamp"].append(str(timestamp))
+                    # results["Timestamp"].append(str(timestamp))
                     results["predictions"].append(str(prediction))
                     results["uncertainties"].append(str(uncertaintii))
 
-                    timestamp += timedelta(seconds=6)
+                    # timestamp += timedelta(seconds=6)
                     input_data = np.roll(input_data, -1)
                     input_data[-1] = prediction
 

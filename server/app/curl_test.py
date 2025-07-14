@@ -7,26 +7,31 @@ from datetime import datetime, timedelta
 import pytz
 import requests
 
-end_time = datetime.now()
+# end_time = datetime(1,1,1)
 
 
 def get_input_features(simulate):
     # current_time = datetime.now()
 
-    global end_time
+    # global end_time
+    end_time = datetime.now()
     start_time = end_time - timedelta(minutes=5)
     end_time -= timedelta(minutes=0)
     # start_time = current_time - timedelta(minutes=20)
     # end_time = current_time - timedelta(minutes=10)
 
-    # print(start_time)
-    # print(end_time)
+    # print('local start time: ', start_time)
+    # print('local end time: ', end_time)
 
     formatted_start_time = start_time.astimezone(pytz.utc)
+    # print('server start time: ', formatted_start_time)
     formatted_start_time_str = formatted_start_time.strftime("%Y-%m-%dT%H%%3A%MZ")
+    # print('server start time str: ', formatted_start_time_str)
     formatted_end_time = end_time.astimezone(pytz.utc)
+    # print('server end time: ', formatted_end_time)
     formatted_end_time_str = formatted_end_time.strftime("%Y-%m-%dT%H%%3A%MZ")
-
+    # print('server end time str: ', formatted_end_time_str)
+    end_time = formatted_end_time
     # print(formatted_start_time)
     # print(formatted_end_time)
     # Define the request url
@@ -148,11 +153,11 @@ def get_input_features(simulate):
 
         # print("list of all workloads = ", list_of_all_workloads)
 
-        return list_of_all_workloads, tradeoff_service_response_time
+        return list_of_all_workloads, tradeoff_service_response_time, end_time
 
     except requests.exceptions.RequestException as e:
         print("Request failed: ", e)
-        return e, tradeoff_service_response_time
+        return e, tradeoff_service_response_time, end_time
 
 
 # inputs = get_input_features()
