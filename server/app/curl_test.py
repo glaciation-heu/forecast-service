@@ -38,8 +38,8 @@ def get_input_features(simulate):
     url_req = (
         (
             # "http://tradeoff.validation/api/v1/clusters/hh/wnode?startTime="
-            "http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="
-            # "http://trade-off-service/api/v1/clusters/hh/workloads?startTime="
+            # http://tradeoff.integration/api/v1/clusters/hh/workloads?startTime="
+            "http://trade-off-service/api/v1/clusters/hh/workloads?startTime="
             + formatted_start_time_str
             + "&endTime="
             + formatted_end_time_str
@@ -57,7 +57,7 @@ def get_input_features(simulate):
             response = requests.get(url_req)
         else:
             headers = {"Content-Type": "application/json"}
-            with open("requests.json", "rb") as f:
+            with open("app/requests.json", "rb") as f:
                 data = f.read()
             response = requests.post(url_req, data=data, headers=headers, verify=False)
 
